@@ -19,6 +19,10 @@ async function getArticles() {
 
 // GET /api/articles
 router.get('/articles', async (req, res) => {
+  // Set up abort controller for client disconnection
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   try {
     const country = req.query.country || '';
     const category = req.query.category || '';
@@ -36,34 +40,46 @@ router.get('/articles', async (req, res) => {
       articles = articles.filter(a => a.category.toLowerCase() === category.toLowerCase());
     }
 
-    // Source Diversity: group by sourceId and take max 5 per source
+    // Improved Source Diversity: for each source, take top 5 most recent articles
     const articlesBySource = {};
     for (const a of articles) {
       if (!articlesBySource[a.sourceId]) {
         articlesBySource[a.sourceId] = [];
       }
-      if (articlesBySource[a.sourceId].length < 5) {
-        articlesBySource[a.sourceId].push(a);
-      }
+      articlesBySource[a.sourceId].push(a);
     }
 
-    let diverseArticles = Object.values(articlesBySource).flat();
-    diverseArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-    
+    // Sort each source's articles by date (newest first) and take top 5
+    const diverseArticles = Object.values(articlesBySource)
+      .map(sourceArticles =>
+        sourceArticles
+          .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
+          .slice(0, 5)
+      )
+      .flat()
+      .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate)); // Global sort by date
+
     const paginated = diverseArticles.slice(0, 30);
     const translatedArticles = [];
     const CONCURRENCY_LIMIT = 5;
 
     for (let i = 0; i < paginated.length; i += CONCURRENCY_LIMIT) {
+      if (abortController.signal.aborted) {
+        return;
+      }
+
       const chunk = paginated.slice(i, i + CONCURRENCY_LIMIT);
-      const promises = chunk.map(a => translateArticle(a, lang));
+      const promises = chunk.map(a => translateArticle(a, lang, abortController.signal));
       const results = await Promise.allSettled(promises);
-      
+
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           translatedArticles.push(result.value);
         } else {
-          console.error('Translation error:', result.reason);
+          // Don't treat AbortError as an error - it's expected when client disconnects
+          if (result.reason && result.reason.name !== 'AbortError') {
+            console.error('Translation error:', result.reason.message || result.reason);
+          }
           translatedArticles.push(chunk[index]); // Graceful fallback
         }
       });
@@ -71,8 +87,11 @@ router.get('/articles', async (req, res) => {
 
     res.json(translatedArticles);
   } catch (err) {
-    console.error('Error fetching articles:', err);
-    res.status(500).json({ error: 'Failed to fetch articles' });
+    // Don't error on abort
+    if (err.name !== 'AbortError') {
+      console.error('Error fetching articles:', err);
+      res.status(500).json({ error: 'Failed to fetch articles' });
+    }
   }
 });
 

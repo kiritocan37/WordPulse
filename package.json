@@ -8,9 +8,16 @@
     "test": "node test/test.js"
   },
   "dependencies": {
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "google-translate-api-x": "^10.7.3",
+    "helmet": "^8.2.0",
+    "ioredis": "^5.11.1",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "redis": "^6.0.0",
     "rss-parser": "^3.13.0"
   },
   "engines": {

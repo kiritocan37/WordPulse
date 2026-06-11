@@ -1,11 +1,14 @@
 'use strict';
 
 const RSSParser = require('rss-parser');
+const crypto = require('crypto');
 
 let lastSuccessfulArticles = [];
+let lastSuccessfulArticlesTimestamp = 0;
+const LAST_SUCCESSFUL_TTL = 60 * 60 * 1000; // 1 hour TTL for fallback cache
 
 const parser = new RSSParser({
-  timeout: 4000,
+  timeout: parseInt(process.env.RSS_TIMEOUT_MS) || 4000,
   headers: {
     'User-Agent': 'WorldPulse/1.0 (News Aggregator)'
   }
@@ -75,6 +78,7 @@ const FEED_SOURCES = [
 /**
  * Multilingual keyword maps for categorizing articles.
  * Includes terms in English, French, German, and Russian.
+ * Fixed duplicates and improved keyword lists.
  */
 const CATEGORY_KEYWORDS = {
   tech: [
@@ -94,7 +98,7 @@ const CATEGORY_KEYWORDS = {
   culture: [
     'culture', 'art', 'music', 'film', 'cinema', 'book', 'theater',
     'entertainment', 'sport', 'football', 'olympic', 'festival',
-    'culture', 'cinema', 'musique', 'litterature',
+    'cinema', 'musique', 'litterature',
     'kultur', 'kunst', 'musik', 'kino', 'sport',
     'культур', 'искусств', 'спорт', 'кино', 'музык'
   ],
@@ -109,6 +113,7 @@ const CATEGORY_KEYWORDS = {
 /**
  * Categorize an article using keyword matching against RSS categories,
  * title, and description text.
+ * Uses word boundary matching for more accurate categorization.
  * @param {object} item - RSS feed item
  * @param {object} source - Source configuration
  * @returns {string} Category name (world, tech, politics, culture)
@@ -126,7 +131,17 @@ function categorizeArticle(item, source) {
 
   const scores = {};
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    scores[category] = keywords.filter(kw => searchText.includes(kw)).length;
+    let score = 0;
+    for (const kw of keywords) {
+      // Create word boundary regex for more accurate matching
+      // Escape special regex characters in keyword
+      const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedKw}\\b`, 'i');
+      if (searchText.match(regex)) {
+        score++;
+      }
+    }
+    scores[category] = score;
   }
 
   const best = Object.entries(scores)
@@ -139,7 +154,7 @@ function categorizeArticle(item, source) {
 
 /**
  * Extract an image URL from an RSS item if available.
- * Checks enclosure, media:content, and img tags in content.
+ * Checks enclosure, media:content, media:thumbnail, and img tags in content.
  * @param {object} item - RSS feed item
  * @returns {string|null}
  */
@@ -148,6 +163,7 @@ function extractImage(item) {
 
   if (item['media:content']) {
     const media = item['media:content'];
+    // Handle @attributes in XML parsing
     if (media.$ && media.$.url) return media.$.url;
     if (media.url) return media.url;
   }
@@ -212,11 +228,12 @@ const fetchWithTimeout = (url, timeoutMs) => {
  */
 async function fetchFeed(source) {
   let feed;
-  const TIMEOUT = 4500; // 4.5s max per feed
+  const TIMEOUT = parseInt(process.env.RSS_TIMEOUT_MS) || 4500; // Configurable timeout
 
   try {
     feed = await fetchWithTimeout(source.feedUrl, TIMEOUT);
   } catch (primaryErr) {
+    console.error(`Feed failed for ${source.name} (${source.feedUrl}): ${primaryErr.message}`);
     if (source.fallbackUrl) {
       try {
         feed = await fetchWithTimeout(source.fallbackUrl, TIMEOUT);
@@ -225,15 +242,14 @@ async function fetchFeed(source) {
         return [];
       }
     } else {
-      console.error(`Feed failed for ${source.name}: ${primaryErr.message}`);
       return [];
     }
   }
-  
+
   if (!feed || !feed.items) {
     return [];
   }
-  
+
   return feed.items.map(item => mapItemToArticle(item, source));
 }
 
@@ -254,11 +270,14 @@ async function fetchAllFeeds() {
   // Sort by publication date, newest first
   articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
-  if (articles.length === 0 && lastSuccessfulArticles.length > 0) {
-    return lastSuccessfulArticles;
-  }
+  // Update last successful articles with timestamp
   if (articles.length > 0) {
     lastSuccessfulArticles = articles;
+    lastSuccessfulArticlesTimestamp = Date.now();
+  } else if (Date.now() - lastSuccessfulArticlesTimestamp < LAST_SUCCESSFUL_TTL &&
+             lastSuccessfulArticles.length > 0) {
+    // Return cached articles if within TTL
+    return [...lastSuccessfulArticles];
   }
 
   return articles;

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "entries": {
+    "79a93d4a2f8f50b95f852280616242fee1855dc99a3c75211917f55e72e95fae": {
+      "last_emitted_at_ms": 1781275676433,
+      "message": "Use parallel execution for independent tasks. Use run_in_background for long operations (npm install, builds, tests)."
+    },
+    "466399dafa2d20f60587180bad0a07358eb7f2bce724df0ff682f038ad33f5ad": {
+      "last_emitted_at_ms": 1781275102220,
+      "message": "Read multiple files in parallel when possible for faster analysis."
+    },
+    "445ed27a3872b681d98190bae61ccb84954e1bc4e140df5370be958dee776b3a": {
+      "last_emitted_at_ms": 1781274542516,
+      "message": "Verify changes work after editing. Test functionality before marking complete."
+    },
+    "f6a16e0c62ded53453fd15d707afd2a8caa20494e658db5ec113101b769ccd9e": {
+      "last_emitted_at_ms": 1781274036431,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Error Handling: Improve abort error handling in routes"
+    },
+    "5c35f51ba97101d91174a31517fd84a5d038534e529445422b0190e60f8f0ccb": {
+      "last_emitted_at_ms": 1781272700439,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Optimize filtering and diversity logic in article service"
+    },
+    "b456a4e8d3fad4744f060f6d2aa545360d97387859d9ad6842d7659c0fd9ec04": {
+      "last_emitted_at_ms": 1781272418495,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Performance: Improve translation concurrency with worker pool pattern"
+    },
+    "27c8da80634dc951e7154b6104aa45716053b7f149e2e23c6c0b3492f1006ac3": {
+      "last_emitted_at_ms": 1781272262680,
+      "message": "Spawning agent: general-purpose (inherit) | Task: Task completed"
+    }
+  },
+  "updated_at": "2026-06-12T14:47:56.433Z"
+}

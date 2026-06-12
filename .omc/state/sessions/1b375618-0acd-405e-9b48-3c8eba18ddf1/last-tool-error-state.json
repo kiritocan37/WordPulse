@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"ls -la .omc/state/sessions/1b375618-0acd-405e-9b48-3c8eba18ddf1/ralph*\",\"description\":\"Check for ralph state files\"}",
+  "error": "Exit code 2\nls: cannot access '.omc/state/sessions/1b375618-0acd-405e-9b48-3c8eba18ddf1/ralph*': No such file or directory",
+  "timestamp": "2026-06-12T20:47:00.375Z",
+  "retry_count": 3
+}

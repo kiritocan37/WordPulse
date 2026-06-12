@@ -97,62 +97,104 @@
   "hotPaths": [
     {
       "path": "test\\routes.test.js",
-      "accessCount": 120,
-      "lastAccessed": 1781258172722,
-      "type": "file"
-    },
-    {
-      "path": "test\\translate.test.js",
-      "accessCount": 58,
-      "lastAccessed": 1781254747808,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 58,
-      "lastAccessed": 1781256451101,
-      "type": "file"
-    },
-    {
-      "path": "src\\cache.js",
-      "accessCount": 33,
-      "lastAccessed": 1781257958097,
-      "type": "file"
-    },
-    {
-      "path": "src\\translate.js",
-      "accessCount": 26,
-      "lastAccessed": 1781257916956,
+      "accessCount": 127,
+      "lastAccessed": 1781286314128,
       "type": "file"
     },
     {
       "path": "src\\routes.js",
-      "accessCount": 25,
-      "lastAccessed": 1781258465083,
+      "accessCount": 92,
+      "lastAccessed": 1781296275338,
       "type": "file"
     },
     {
       "path": "server.js",
-      "accessCount": 21,
-      "lastAccessed": 1781256461369,
+      "accessCount": 70,
+      "lastAccessed": 1781293245752,
       "type": "file"
     },
     {
-      "path": "test\\feeds.test.js",
-      "accessCount": 18,
-      "lastAccessed": 1781256521294,
+      "path": "package.json",
+      "accessCount": 65,
+      "lastAccessed": 1781292419856,
+      "type": "file"
+    },
+    {
+      "path": "test\\translate.test.js",
+      "accessCount": 60,
+      "lastAccessed": 1781267519385,
+      "type": "file"
+    },
+    {
+      "path": "public\\js\\app.js",
+      "accessCount": 50,
+      "lastAccessed": 1781296629303,
       "type": "file"
     },
     {
       "path": "src\\feeds.js",
-      "accessCount": 18,
-      "lastAccessed": 1781257873155,
+      "accessCount": 50,
+      "lastAccessed": 1781296782301,
+      "type": "file"
+    },
+    {
+      "path": "src\\cache.js",
+      "accessCount": 46,
+      "lastAccessed": 1781286088939,
+      "type": "file"
+    },
+    {
+      "path": "src\\translate.js",
+      "accessCount": 44,
+      "lastAccessed": 1781286074999,
+      "type": "file"
+    },
+    {
+      "path": "public\\css\\style.css",
+      "accessCount": 21,
+      "lastAccessed": 1781296677733,
+      "type": "file"
+    },
+    {
+      "path": "test\\feeds.test.js",
+      "accessCount": 20,
+      "lastAccessed": 1781267505104,
+      "type": "file"
+    },
+    {
+      "path": "public\\index.html",
+      "accessCount": 20,
+      "lastAccessed": 1781296339259,
+      "type": "file"
+    },
+    {
+      "path": "src\\config.js",
+      "accessCount": 19,
+      "lastAccessed": 1781286871592,
+      "type": "file"
+    },
+    {
+      "path": "src\\services\\articleService.js",
+      "accessCount": 19,
+      "lastAccessed": 1781296366642,
       "type": "file"
     },
     {
       "path": "test\\cache.test.js",
-      "accessCount": 15,
-      "lastAccessed": 1781253166745,
+      "accessCount": 17,
+      "lastAccessed": 1781267511397,
+      "type": "file"
+    },
+    {
+      "path": "public\\robots.txt",
+      "accessCount": 5,
+      "lastAccessed": 1781279867601,
+      "type": "file"
+    },
+    {
+      "path": "src\\cache-redis.js",
+      "accessCount": 5,
+      "lastAccessed": 1781282202791,
       "type": "file"
     },
     {
@@ -162,40 +204,40 @@
       "type": "file"
     },
     {
-      "path": "src\\cache-redis.js",
-      "accessCount": 3,
-      "lastAccessed": 1781257674716,
-      "type": "file"
-    },
-    {
-      "path": "public\\js\\app.js",
-      "accessCount": 2,
-      "lastAccessed": 1781251645469,
-      "type": "file"
-    },
-    {
       "path": "README.md",
-      "accessCount": 2,
-      "lastAccessed": 1781256406956,
+      "accessCount": 4,
+      "lastAccessed": 1781286002443,
       "type": "file"
     },
     {
-      "path": "src\\config.js",
-      "accessCount": 2,
-      "lastAccessed": 1781258559028,
+      "path": ".env.example",
+      "accessCount": 4,
+      "lastAccessed": 1781286903162,
+      "type": "file"
+    },
+    {
+      "path": "public\\sitemap.xml",
+      "accessCount": 3,
+      "lastAccessed": 1781279879332,
+      "type": "file"
+    },
+    {
+      "path": "src\\utils\\retry.js",
+      "accessCount": 3,
+      "lastAccessed": 1781284653200,
       "type": "file"
     },
     {
       "path": "vercel.json",
-      "accessCount": 1,
-      "lastAccessed": 1781209473396,
+      "accessCount": 3,
+      "lastAccessed": 1781292803372,
       "type": "file"
     },
     {
-      "path": "public\\index.html",
-      "accessCount": 1,
-      "lastAccessed": 1781251405203,
-      "type": "file"
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1781278704658,
+      "type": "directory"
     }
   ],
   "userDirectives": []

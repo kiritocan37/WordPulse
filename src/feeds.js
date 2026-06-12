@@ -111,6 +111,16 @@ const CATEGORY_KEYWORDS = {
   ]
 };
 
+// Pre-compile regex patterns for categorization at module initialization
+const CATEGORY_REGEXES = {};
+for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+  CATEGORY_REGEXES[category] = keywords.map(kw => {
+    // Escape special regex characters in keyword
+    const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escapedKw}\\b`, 'i');
+  });
+}
+
 /**
  * Categorize an article using keyword matching against RSS categories,
  * title, and description text.
@@ -133,12 +143,9 @@ function categorizeArticle(item, source) {
   const scores = {};
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     let score = 0;
-    for (const kw of keywords) {
-      // Create word boundary regex for more accurate matching
-      // Escape special regex characters in keyword
-      const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b${escapedKw}\\b`, 'i');
-      if (searchText.match(regex)) {
+    const regexes = CATEGORY_REGEXES[category];
+    for (let i = 0; i < keywords.length; i++) {
+      if (searchText.match(regexes[i])) {
         score++;
       }
     }

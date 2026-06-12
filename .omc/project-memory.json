@@ -102,9 +102,15 @@
       "type": "file"
     },
     {
+      "path": "package.json",
+      "accessCount": 94,
+      "lastAccessed": 1781299799907,
+      "type": "file"
+    },
+    {
       "path": "src\\routes.js",
-      "accessCount": 92,
-      "lastAccessed": 1781296275338,
+      "accessCount": 93,
+      "lastAccessed": 1781298632078,
       "type": "file"
     },
     {
@@ -114,9 +120,9 @@
       "type": "file"
     },
     {
-      "path": "package.json",
-      "accessCount": 65,
-      "lastAccessed": 1781292419856,
+      "path": "src\\feeds.js",
+      "accessCount": 66,
+      "lastAccessed": 1781299673481,
       "type": "file"
     },
     {
@@ -127,14 +133,8 @@
     },
     {
       "path": "public\\js\\app.js",
-      "accessCount": 50,
-      "lastAccessed": 1781296629303,
-      "type": "file"
-    },
-    {
-      "path": "src\\feeds.js",
-      "accessCount": 50,
-      "lastAccessed": 1781296782301,
+      "accessCount": 54,
+      "lastAccessed": 1781298729391,
       "type": "file"
     },
     {
@@ -145,14 +145,14 @@
     },
     {
       "path": "src\\translate.js",
-      "accessCount": 44,
-      "lastAccessed": 1781286074999,
+      "accessCount": 45,
+      "lastAccessed": 1781298663054,
       "type": "file"
     },
     {
       "path": "public\\css\\style.css",
-      "accessCount": 21,
-      "lastAccessed": 1781296677733,
+      "accessCount": 22,
+      "lastAccessed": 1781299488562,
       "type": "file"
     },
     {
@@ -168,15 +168,15 @@
       "type": "file"
     },
     {
-      "path": "src\\config.js",
-      "accessCount": 19,
-      "lastAccessed": 1781286871592,
+      "path": "src\\services\\articleService.js",
+      "accessCount": 20,
+      "lastAccessed": 1781298652476,
       "type": "file"
     },
     {
-      "path": "src\\services\\articleService.js",
-      "accessCount": 19,
-      "lastAccessed": 1781296366642,
+      "path": "src\\config.js",
+      "accessCount": 20,
+      "lastAccessed": 1781299242282,
       "type": "file"
     },
     {

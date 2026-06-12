@@ -62,10 +62,19 @@
       "status": "completed",
       "completed_at": "2026-06-12T20:40:02.748Z",
       "duration_ms": 648292
+    },
+    {
+      "agent_id": "af47e337105ccd9df",
+      "agent_type": "general-purpose",
+      "started_at": "2026-06-12T21:12:33.215Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-06-12T21:19:40.775Z",
+      "duration_ms": 427560
     }
   ],
-  "total_spawned": 7,
-  "total_completed": 7,
+  "total_spawned": 8,
+  "total_completed": 8,
   "total_failed": 0,
-  "last_updated": "2026-06-12T20:43:56.390Z"
+  "last_updated": "2026-06-12T21:19:40.883Z"
 }

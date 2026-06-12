@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://word-pulse-nine.vercel.app/sitemap.xml

@@ -80,15 +80,6 @@ const FEED_SOURCES = [
     feedUrl: 'https://www.lemonde.fr/rss/une.xml',
     fallbackUrl: null,
     defaultCategory: 'world'
-  },
-  {
-    id: 'rbc',
-    name: 'RBC',
-    country: 'RU',
-    language: 'ru',
-    feedUrl: 'https://rbc.ru/v10/helper/rss.xml',
-    fallbackUrl: 'https://www.rbc.ru/newspaper/rss/',
-    defaultCategory: 'world'
   }
 ];
 

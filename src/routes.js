@@ -16,7 +16,7 @@ router.get('/articles', async (req, res) => {
 
   try {
     // Whitelists for query parameters
-    const VALID_COUNTRIES = ['US', 'UK', 'QA', 'DE', 'FR', 'RU'];
+    const VALID_COUNTRIES = ['US', 'UK', 'QA', 'DE', 'FR'];
     const VALID_CATEGORIES = ['world', 'tech', 'politics', 'culture'];
     const VALID_LANGS = ['en', 'fr', 'de', 'ru'];
 

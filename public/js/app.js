@@ -345,36 +345,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     heroSection.innerHTML = '';
 
-    const heroMeta = document.createElement('div');
-    heroMeta.className = 'hero-meta';
-
-    const heroSource = document.createElement('span');
-    heroSource.textContent = heroArticle.source;
-    const heroDate = document.createElement('span');
-    heroDate.textContent = new Date(heroArticle.pubDate).toLocaleDateString();
-    const heroCategory = document.createElement('span');
-    heroCategory.textContent = heroArticle.category;
-
-    heroMeta.append(heroSource, heroDate, heroCategory);
-
+    // Create hero title
     const heroTitle = document.createElement('h1');
     heroTitle.className = 'hero-title';
-    const heroLink = document.createElement('a');
-    heroLink.textContent = heroArticle.title;
-    if (heroArticle.link && isSafeUrl(heroArticle.link)) {
-      heroLink.href = heroArticle.link;
-      heroLink.target = '_blank';
-      heroLink.rel = 'noopener noreferrer';
-    } else {
-      heroLink.href = 'javascript:void(0)';
-    }
-    heroTitle.appendChild(heroLink);
+    heroTitle.textContent = heroArticle.title;
 
-    const heroDesc = document.createElement('p');
-    heroDesc.className = 'hero-desc';
-    heroDesc.textContent = heroArticle.description || '';
+    // Create inline article content container
+    const heroContent = document.createElement('div');
+    heroContent.className = 'hero-content';
+    heroContent.innerHTML = `
+      <div class="hero-meta">
+        <span>${heroArticle.source}</span>
+        <span>${new Date(heroArticle.pubDate).toLocaleDateString()}</span>
+        <span>${heroArticle.category}</span>
+      </div>
+      ${heroArticle.imageUrl ? `<img src="${heroArticle.imageUrl}" alt="${heroArticle.title}" class="hero-image">` : ''}
+      <p class="hero-description">${heroArticle.description || ''}</p>
+      <div class="hero-actions">
+        <button class="read-original-btn" data-link="${heroArticle.link}" ${!heroArticle.link || !isSafeUrl(heroArticle.link) ? 'disabled' : ''}>
+          Read Original
+        </button>
+      </div>
+    `;
 
-    heroSection.append(heroMeta, heroTitle, heroDesc);
+    heroSection.append(heroTitle, heroContent);
 
     // Add ARIA live region for hero content
     heroSection.setAttribute('aria-live', 'polite');
@@ -425,24 +419,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const cardTitle = document.createElement('h2');
       cardTitle.className = 'card-title';
-      const cardLink = document.createElement('a');
-      cardLink.textContent = article.title;
-      if (article.link && isSafeUrl(article.link)) {
-        cardLink.href = article.link;
-        cardLink.target = '_blank';
-        cardLink.rel = 'noopener noreferrer';
-      } else {
-        cardLink.href = 'javascript:void(0)';
-      }
-      // Add accessibility attributes
-      cardLink.setAttribute('aria-label', `Read article: ${article.title}`);
-      cardTitle.appendChild(cardLink);
+      cardTitle.textContent = article.title;
 
-      const cardDesc = document.createElement('p');
-      cardDesc.className = 'card-desc';
-      cardDesc.textContent = article.description ? article.description.substring(0, 150) + '...' : '';
+      // Create inline article content container
+      const cardContent = document.createElement('div');
+      cardContent.className = 'card-content';
+      cardContent.innerHTML = `
+        ${article.imageUrl ? `<img src="${article.imageUrl}" alt="${article.title}" class="card-image">` : ''}
+        <p class="card-description">${article.description || ''}</p>
+        <div class="card-actions">
+          <button class="read-original-btn" data-link="${article.link}" ${!article.link || !isSafeUrl(article.link) ? 'disabled' : ''}>
+            Read Original
+          </button>
+        </div>
+      `;
 
-      card.append(cardMeta, cardTitle, cardDesc);
+      card.append(cardMeta, cardTitle, cardContent);
       fragment.appendChild(card);
     });
 
@@ -478,6 +470,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Observe all cards (both existing and newly added)
     document.querySelectorAll('.card.reveal').forEach(card => {
       observer.observe(card);
+    });
+
+    // Add event listeners for Read Original buttons
+    document.querySelectorAll('.read-original-btn').forEach(button => {
+      button.addEventListener('click', (e) => {
+        const link = e.target.dataset.link;
+        if (link && isSafeUrl(link)) {
+          window.open(link, '_blank');
+        }
+      });
     });
   }
 

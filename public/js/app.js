@@ -127,6 +127,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize
   fetchArticles();
+  initKeyboardNavigation();
+
+  // Helper function to get CSS variable values
+  function getCssVariable(variableName) {
+    const element = document.documentElement;
+    const cs = getComputedStyle(element);
+    return cs.getPropertyValue(variableName).trim();
+  }
+
+  // Initialize keyboard navigation for better accessibility
+  function initKeyboardNavigation() {
+    // Make sure search input is accessible
+    if (searchInput) {
+      searchInput.setAttribute('aria-label', 'Search articles by title');
+      searchInput.setAttribute('placeholder', 'Search articles by title...');
+    }
+
+    // Add skip to content link for keyboard users
+    const skipLink = document.createElement('a');
+    skipLink.href = '#main-content';
+    skipLink.className = 'skip-link';
+    skipLink.textContent = 'Skip to main content';
+    skipLink.style.position = 'absolute';
+    skipLink.style.top = '-40px';
+    skipLink.style.left = '0';
+    skipLink.style.backgroundColor = getCssVariable('--accent-color');
+    skipLink.style.color = getCssVariable('--bg-color');
+    skipLink.style.padding = getCssVariable('--space-xs') + ' ' + getCssVariable('--space-sm');
+    skipLink.style.zIndex = '1000';
+    skipLink.style.borderRadius = '4px';
+    skipLink.style.transition = 'top 0.3s ease';
+
+    skipLink.addEventListener('focus', () => {
+      skipLink.style.top = '0';
+    });
+
+    skipLink.addEventListener('blur', () => {
+      skipLink.style.top = '-40px';
+    });
+
+    document.body.insertBefore(skipLink, document.body.firstChild);
+
+    // Add main content landmark
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.setAttribute('id', 'main-content');
+    }
+  }
+
+  // Initialize keyboard navigation
+  initKeyboardNavigation();
 
   // Event Listeners
   langSelect.addEventListener('change', (e) => {
@@ -141,6 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
       currentCategory = e.target.dataset.category;
       fetchArticles();
     });
+
+    // Add keyboard support
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        btn.click();
+      }
+    });
   });
 
   countryFilters.forEach(btn => {
@@ -149,6 +208,14 @@ document.addEventListener('DOMContentLoaded', () => {
       e.target.classList.add('active');
       currentCountry = e.target.dataset.country;
       fetchArticles();
+    });
+
+    // Add keyboard support
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        btn.click();
+      }
     });
   });
 
@@ -159,9 +226,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 300);
   });
 
+  // Add submit on Enter for search
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      applySearch(e.target.value);
+    }
+  });
+
   if (retryButton) {
     retryButton.addEventListener('click', () => {
       fetchArticles();
+    });
+
+    // Add keyboard support
+    retryButton.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        retryButton.click();
+      }
     });
   }
 
@@ -169,6 +251,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMoreButton.addEventListener('click', () => {
       currentOffset++;
       displayArticles();
+    });
+
+    // Add keyboard support
+    loadMoreButton.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        loadMoreButton.click();
+      }
     });
   }
 
@@ -275,6 +365,11 @@ document.addEventListener('DOMContentLoaded', () => {
     heroDesc.textContent = heroArticle.description || '';
 
     heroSection.append(heroMeta, heroTitle, heroDesc);
+
+    // Add ARIA live region for hero content
+    heroSection.setAttribute('aria-live', 'polite');
+    heroSection.setAttribute('aria-atomic', 'true');
+
     heroSection.classList.remove('hidden');
 
     // Update SEO meta tags for the hero article
@@ -301,14 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return displayArticles(); // Recursive call with corrected offset
     }
 
-    const observer = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          obs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
+    // Use DocumentFragment for better DOM performance
+    const fragment = document.createDocumentFragment();
 
     gridArticles.forEach((article, index) => {
       const card = document.createElement('article');
@@ -335,6 +424,8 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         cardLink.href = 'javascript:void(0)';
       }
+      // Add accessibility attributes
+      cardLink.setAttribute('aria-label', `Read article: ${article.title}`);
       cardTitle.appendChild(cardLink);
 
       const cardDesc = document.createElement('p');
@@ -342,10 +433,10 @@ document.addEventListener('DOMContentLoaded', () => {
       cardDesc.textContent = article.description ? article.description.substring(0, 150) + '...' : '';
 
       card.append(cardMeta, cardTitle, cardDesc);
-      bentoGrid.appendChild(card);
-      observer.observe(card);
+      fragment.appendChild(card);
     });
 
+    bentoGrid.appendChild(fragment);
     bentoGrid.classList.remove('hidden');
 
     // Show/hide Load More button
@@ -363,6 +454,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHtmlLang();
     updateMetaTags(); // Pass null for homepage defaults
     updateHreflangLinks();
+
+    // Re-initialize Intersection Observer for new cards
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    // Observe all cards (both existing and newly added)
+    document.querySelectorAll('.card.reveal').forEach(card => {
+      observer.observe(card);
+    });
   }
 
   function isSafeUrl(url) {
@@ -382,11 +488,68 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sectionDivider) sectionDivider.classList.add('hidden');
     errorMessage.classList.add('hidden');
     if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+
+    // Show skeleton loaders for hero and grid
+    const skeletonHero = `
+      <div class="hero skeleton">
+        <div class="hero-meta">
+          <span class="skeleton-text"></span>
+          <span class="skeleton-text-xs"></span>
+          <span class="skeleton-text-xs"></span>
+        </div>
+        <h1 class="hero-title skeleton-text-lg"></h1>
+        <p class="hero-desc skeleton-text"></p>
+        <p class="hero-desc skeleton-text"></p>
+        <p class="hero-desc skeleton-text"></p>
+      </div>
+    `;
+
+    const skeletonGrid = `
+      <div class="bento-grid skeleton">
+        ${Array.from({length: 6}).map(() => `
+          <article class="card skeleton">
+            <div class="card-meta">
+              <span class="skeleton-text-xs"></span>
+              <span class="skeleton-text-xs"></span>
+            </div>
+            <h2 class="card-title skeleton-text-lg"></h2>
+            <p class="card-desc skeleton-text"></p>
+            <p class="card-desc skeleton-text"></p>
+          </article>
+        `).join('')}
+      </div>
+    `;
+
+    // Insert skeletons if they don't already exist
+    if (!document.querySelector('.hero.skeleton')) {
+      heroSection.insertAdjacentHTML('afterbegin', skeletonHero);
+    }
+    if (!document.querySelector('.bento-grid.skeleton')) {
+      bentoGrid.insertAdjacentHTML('afterbegin', skeletonGrid);
+    }
+
+    // Show skeleton elements
+    heroSection.classList.remove('hidden');
+    bentoGrid.classList.remove('hidden');
+    if (sectionDivider) sectionDivider.classList.remove('hidden');
   }
 
   function hideLoader() {
     loader.classList.add('hidden');
     loader.classList.remove('loader-pulse');
+
+    // Hide skeleton loaders
+    const skeletonHero = document.querySelector('.hero.skeleton');
+    const skeletonGrid = document.querySelector('.bento-grid.skeleton');
+    if (skeletonHero) skeletonHero.remove();
+    if (skeletonGrid) skeletonGrid.remove();
+
+    // Hide content sections
+    heroSection.classList.add('hidden');
+    bentoGrid.classList.add('hidden');
+    if (sectionDivider) sectionDivider.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
   }
 
   function showError(msg) {

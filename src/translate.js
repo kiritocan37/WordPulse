@@ -1,6 +1,7 @@
 const translate = require('google-translate-api-x');
 const crypto = require('crypto');
 const { TIMEOUTS, CACHE_TTL } = require('./config');
+const { retryWithBackoff, CircuitBreaker } = require('./utils/retry');
 
 /**
  * Translate text using google-translate-api-x with fallback.
@@ -18,15 +19,36 @@ async function translateText(text, targetLang, signal) {
   // Mapping UA to UK for translation APIs
   const apiLang = normalizedTargetLang === 'ua' ? 'uk' : normalizedTargetLang;
 
-  try {
-    const res = await Promise.race([
-      translate(text, { to: apiLang }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Google translate timed out after ${TIMEOUTS.TRANSLATION_PRIMARY}ms`)), TIMEOUTS.TRANSLATION_PRIMARY)
-      )
-    ]);
-    return res.text;
-  } catch (err) {
+  // Circuit breaker for translation service
+  const translateCircuitBreaker = new CircuitBreaker({
+    failureThreshold: 3,
+    timeout: 60000, // 1 minute
+    resetTimeout: 30000 // 30 seconds
+  });
+
+  return translateCircuitBreaker.execute(async () => {
+    // Use retry mechanism for translation
+    return retryWithBackoff(async () => {
+      const res = await Promise.race([
+        translate(text, { to: apiLang }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Google translate timed out after ${TIMEOUTS.TRANSLATION_PRIMARY}ms`)), TIMEOUTS.TRANSLATION_PRIMARY)
+        )
+      ]);
+      return res.text;
+    }, {
+      maxAttempts: 2,
+      baseDelay: 500,
+      maxDelay: 3000,
+      retryConditions: [
+        /timeout/i,
+        /network/i,
+        /fetch/i,
+        /ECONNRESET/i,
+        /ETIMEDOUT/i
+      ]
+    });
+  }).catch(async (err) => {
     console.error(`Google translate failed for "${text.substring(0, 20)}...": ${err.message}`);
 
     // Fallback: LibreTranslate (public instance) - configurable via env
@@ -60,18 +82,20 @@ async function translateText(text, targetLang, signal) {
       if (response.ok) {
         const data = await response.json();
         return data.translatedText || text;
+      } else {
+        throw new Error(`LibreTranslate returned ${response.status}`);
       }
     } catch (fallbackErr) {
       // Ignore abort errors from signal
       if (fallbackErr.name !== 'AbortError') {
         console.error(`LibreTranslate fallback failed: ${fallbackErr.message}`);
       }
-    }
 
-    // Return original text instead of throwing error to avoid breaking cache
-    // This allows the system to continue working and retry later
-    return text;
-  }
+      // Return original text instead of throwing error to avoid breaking cache
+      // This allows the system to continue working and retry later
+      return text;
+    }
+  });
 }
 
 const { Cache } = require('./cache');

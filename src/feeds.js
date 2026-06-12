@@ -3,10 +3,26 @@
 const RSSParser = require('rss-parser');
 const crypto = require('crypto');
 const { CACHE_TTL, TIMEOUTS } = require('./config');
+const { retryWithBackoff, CircuitBreaker } = require('./utils/retry');
 
 let lastSuccessfulArticles = [];
 let lastSuccessfulArticlesTimestamp = 0;
 const LAST_SUCCESSFUL_TTL = CACHE_TTL.LAST_SUCCESSFUL; // 1 hour TTL for fallback cache
+
+// Circuit breakers for each feed source to prevent cascading failures
+const feedCircuitBreakers = new Map();
+
+// Get or create circuit breaker for a feed source
+function getFeedCircuitBreaker(sourceId) {
+  if (!feedCircuitBreakers.has(sourceId)) {
+    feedCircuitBreakers.set(sourceId, new CircuitBreaker({
+      failureThreshold: 3,
+      timeout: 60000, // 1 minute
+      resetTimeout: 30000 // 30 seconds
+    }));
+  }
+  return feedCircuitBreakers.get(sourceId);
+}
 
 const parser = new RSSParser({
   timeout: parseInt(process.env.RSS_TIMEOUT_MS) || TIMEOUTS.RSS_PARSER,
@@ -231,34 +247,53 @@ const fetchWithTimeout = (url, timeoutMs) => {
 
 /**
  * Fetch and parse a single RSS feed. Tries fallback URL on failure.
+ * Uses retry mechanism and circuit breaker for resilience.
  * @param {object} source - Source configuration
  * @returns {Promise<object[]>} Array of article objects
  */
 async function fetchFeed(source) {
-  let feed;
-  const TIMEOUT = parseInt(process.env.RSS_TIMEOUT_MS) || TIMEOUTS.RSS_FETCH; // Configurable timeout
+  const circuitBreaker = getFeedCircuitBreaker(source.id);
 
-  try {
-    feed = await fetchWithTimeout(source.feedUrl, TIMEOUT);
-  } catch (primaryErr) {
-    console.error(`Feed failed for ${source.name} (${source.feedUrl}): ${primaryErr.message}`);
-    if (source.fallbackUrl) {
+  return circuitBreaker.execute(async () => {
+    // Use retry mechanism for fetching feeds
+    return retryWithBackoff(async () => {
+      let feed;
+      const TIMEOUT = parseInt(process.env.RSS_TIMEOUT_MS) || TIMEOUTS.RSS_FETCH; // Configurable timeout
+
       try {
-        feed = await fetchWithTimeout(source.fallbackUrl, TIMEOUT);
-      } catch (fallbackErr) {
-        console.error(`Both feed and fallback failed for ${source.name}: ${fallbackErr.message}`);
-        return [];
+        feed = await fetchWithTimeout(source.feedUrl, TIMEOUT);
+      } catch (primaryErr) {
+        console.error(`Feed failed for ${source.name} (${source.feedUrl}): ${primaryErr.message}`);
+        if (source.fallbackUrl) {
+          try {
+            feed = await fetchWithTimeout(source.fallbackUrl, TIMEOUT);
+          } catch (fallbackErr) {
+            console.error(`Both feed and fallback failed for ${source.name}: ${fallbackErr.message}`);
+            throw new Error(`Both feed URLs failed for ${source.name}`);
+          }
+        } else {
+          throw new Error(`Feed URL failed for ${source.name}`);
+        }
       }
-    } else {
-      return [];
-    }
-  }
 
-  if (!feed || !feed.items) {
-    return [];
-  }
+      if (!feed || !feed.items) {
+        throw new Error(`No items found in feed for ${source.name}`);
+      }
 
-  return feed.items.map(item => mapItemToArticle(item, source));
+      return feed.items.map(item => mapItemToArticle(item, source));
+    }, {
+      maxAttempts: 2,
+      baseDelay: 500,
+      maxDelay: 3000,
+      retryConditions: [
+        /timeout/i,
+        /network/i,
+        /fetch/i,
+        /ECONNRESET/i,
+        /ETIMEDOUT/i
+      ]
+    });
+  });
 }
 
 /**

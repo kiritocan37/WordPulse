@@ -217,6 +217,74 @@ main {
   display: none !important;
 }
 
+/* Skeleton Loader Styles */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-color) 0%, rgba(32, 32, 64, 0.8) 50%, var(--surface-color) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: inherit;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 1.2rem;
+  margin-bottom: var(--space-xs);
+}
+
+.skeleton-text-lg {
+  height: 1.8rem;
+  width: 70%;
+  margin-bottom: var(--space-sm);
+}
+
+.skeleton-text-xs {
+  height: 0.9rem;
+  width: 40%;
+  margin-bottom: var(--space-xs);
+}
+
+.skeleton-rect {
+  height: 1rem;
+  width: 100%;
+}
+
+/* Enhanced Focus Styles for Accessibility */
+:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Touch Feedback Enhancements */
+.filter-btn:active,
+.load-more-button:active,
+#retry-button:active {
+  transform: scale(0.97);
+ transition: transform 0.1s ease;
+}
+
+/* Improved Hover States with Better Performance */
+.hero-title a,
+.card-title a {
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !equivalent;
+  }
+}
+
 .error-message {
   border: 1px solid rgba(239, 68, 68, 0.5);
   background: rgba(127, 29, 29, 0.3);

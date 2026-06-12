@@ -64,6 +64,20 @@ describe('Routes', function() {
         }
       },
       './translate': { translateArticle: mockTranslateArticle },
+      './utils/retry': {
+        retryWithBackoff: async (fn, options) => {
+          // Simply execute the function without retry for testing
+          return await fn();
+        },
+        CircuitBreaker: class {
+          constructor(options) {
+            this.state = 'CLOSED';
+          }
+          async execute(fn) {
+            return await fn();
+          }
+        }
+      },
       './config': {
         CACHE_TTL: { ARTICLE_FEED: 10 * 60 * 1000 },
         DEFAULTS: { ARTICLE_CACHE_KEY: 'all_articles' },

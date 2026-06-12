@@ -40,13 +40,42 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+// Enhanced health check endpoint with system metrics
+app.get('/health', async (req, res) => {
+  try {
+    // Basic health check
+    const healthData = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
+      // Check if we can access cache (basic test)
+      cacheStatus: 'unknown'
+    };
+
+    // Test cache connectivity
+    try {
+      const { cache } = require('./src/cache');
+      // Try a simple cache operation
+      await cache.getOrFetch('__health_check_test', async () => {
+        return 'test';
+      });
+      healthData.cacheStatus = 'ok';
+    } catch (cacheErr) {
+      healthData.cacheStatus = 'error';
+      healthData.cacheError = cacheErr.message;
+      // Don't fail the health check for cache issues
+    }
+
+    res.status(200).json(healthData);
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: err.message
+    });
+  }
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

@@ -100,6 +100,37 @@ app.use(express.json());
 // API Routes
 app.use('/api', apiRoutes);
 
+// Sitemap
+app.get('/sitemap.xml', (req, res) => {
+  const domain = 'https://word-pulse-nine.vercel.app';
+  const lastModDate = new Date();
+  const xmlLastMod = lastModDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  const httpLastMod = lastModDate.toUTCString();
+
+  const urls = [
+    {
+      loc: domain + '/',
+      lastmod: xmlLastMod,
+      changefreq: 'daily',
+      priority: '1.0'
+    }
+  ];
+
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    urls.map(url => '  <url>\n' +
+      '    <loc>' + url.loc + '</loc>\n' +
+      '    <lastmod>' + url.lastmod + '</lastmod>\n' +
+      '    <changefreq>' + url.changefreq + '</changefreq>\n' +
+      '    <priority>' + url.priority + '</priority>\n' +
+      '  </url>').join('\n') +
+    '\n</urlset>';
+
+  res.setHeader('Last-Modified', httpLastMod);
+  res.header('Content-Type', 'application/xml');
+  res.send(xml);
+});
+
 // Sentry error handler
 app.use(Sentry.Handlers.errorHandler());
 

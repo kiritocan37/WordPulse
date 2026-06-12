@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Sentry browser initialization
+  if (typeof Sentry !== 'undefined') {
+    const sentryDsn = document.querySelector('meta[name="sentry-dsn"]')?.getAttribute('content') || '';
+    Sentry.init({
+      dsn: sentryDsn,
+      tracesSampleRate: 1.0,
+      // Set 'release' to the app version if available
+      release: 'wordpulse@' + (Date.now().toString(36)),
+    });
+  }
   const loader = document.getElementById('loader');
   const errorMessage = document.getElementById('error-message');
   const heroSection = document.getElementById('hero-section');

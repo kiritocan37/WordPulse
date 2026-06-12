@@ -1,8 +1,10 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const Sentry = require('@sentry/node');
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
@@ -11,6 +13,20 @@ const apiRoutes = require('./src/routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Read index.html template at startup
+const indexHtmlTemplate = fs.readFileSync(
+  path.join(__dirname, 'public', 'index.html'),
+  'utf8'
+);
+
+// Sentry initialization
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || '',
+  tracesSampleRate: 1.0,
+  // Enable request handler to automatically capture errors from Express
+  requestHandler: true,
+});
 
 // Security middleware
 app.use(helmet());
@@ -84,9 +100,17 @@ app.use(express.json());
 // API Routes
 app.use('/api', apiRoutes);
 
+// Sentry error handler
+app.use(Sentry.Handlers.errorHandler());
+
 // Fallback for SPA/Frontend
 app.get(/(.*)/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const sentryDsn = process.env.SENTRY_DSN || '';
+  const modifiedHtml = indexHtmlTemplate.replace(
+    /<meta name="sentry-dsn" content="[^"]*">/,
+    `<meta name="sentry-dsn" content="${sentryDsn}">`
+  );
+  res.send(modifiedHtml);
 });
 
 const server = app.listen(PORT, () => {

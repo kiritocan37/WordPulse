@@ -45,10 +45,16 @@ const CACHE_KEY_PREFIXES = {
   TRANSLATION: 'trans_'              // Prefix for translation cache keys
 };
 
+/**
+ * Sentry DSN for error tracking (set via SENTRY_DSN environment variable)
+ */
+const SENTRY_DSN = process.env.SENTRY_DSN || '';
+
 module.exports = {
   TIMEOUTS,
   CACHE_TTL,
   LIMITS,
   DEFAULTS,
-  CACHE_KEY_PREFIXES
+  CACHE_KEY_PREFIXES,
+  SENTRY_DSN
 };

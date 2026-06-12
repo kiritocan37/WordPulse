@@ -5,6 +5,22 @@ const crypto = require('crypto');
 const { CACHE_TTL, TIMEOUTS } = require('./config');
 const { retryWithBackoff, CircuitBreaker } = require('./utils/retry');
 
+// Optional fetch for article content (requires node-fetch, which is already used by rss-parser)
+let fetch;
+try {
+  fetch = require('node-fetch');
+} catch (e) {
+  fetch = null;
+}
+
+// Constants for article fetch
+const ARTICLE_FETCH_TIMEOUT_MS = 10000; // 10 seconds
+const MAX_ARTICLE_CONTENT_LENGTH = 1024 * 1024; // 1MB
+
+// Sources for which we do NOT attempt to fetch the article page (to avoid overreach)
+// Add source IDs here if needed (e.g., sources that block bots or require complex JS)
+const BLOCKED_SOURCES_FOR_FETCH = new Set([]);
+
 let lastSuccessfulArticles = [];
 let lastSuccessfulArticlesTimestamp = 0;
 const LAST_SUCCESSFUL_TTL = CACHE_TTL.LAST_SUCCESSFUL; // 1 hour TTL for fallback cache
@@ -201,12 +217,38 @@ function extractImage(item) {
  * Map an RSS item to our standardized article schema.
  * @param {object} item - RSS feed item
  * @param {object} source - Source configuration
- * @returns {object} Standardized article object
+ * @returns {Promise<object>} Promise resolving to standardized article object
  */
-function mapItemToArticle(item, source) {
+async function mapItemToArticle(item, source) {
+  // Prefer the fullest content available: content (content:encoded), then contentSnippet, then summary
+  let description = '';
+  if (item.content) {
+    description = item.content;
+  } else if (item.contentSnippet) {
+    description = item.contentSnippet;
+  } else if (item.summary) {
+    description = item.summary;
+  }
+
+  // Clean HTML tags from description
+  description = description.replace(/<[^>]*>?/gm, '');
+
+  // If description is too short and we have a link, optionally fetch article page
+  if (description.length < 100 && item.link && fetch && !BLOCKED_SOURCES_FOR_FETCH.has(source.id)) {
+    try {
+      const fetchedContent = await fetchArticleContent(item.link, source.id);
+      if (fetchedContent && fetchedContent.length > description.length) {
+        description = fetchedContent;
+      }
+    } catch (err) {
+      // If fetch fails, continue with original description
+      console.debug(`Failed to fetch article content for ${item.link}: ${err.message}`);
+    }
+  }
+
   return {
     title: item.title || '',
-    description: (item.contentSnippet || item.content || item.summary || '').replace(/<[^>]*>?/gm, ''),
+    description: description,
     source: source.name,
     sourceId: source.id,
     country: source.country,
@@ -235,6 +277,70 @@ const fetchWithTimeout = (url, timeoutMs) => {
       });
   });
 };
+
+/**
+ * Fetch article content from a URL and extract main text.
+ * @param {string} url - Article URL
+ * @param {string} sourceId - Source ID for logging
+ * @returns {Promise<string|null>} Extracted text or null if failed
+ */
+async function fetchArticleContent(url, sourceId) {
+  if (!fetch) return null;
+
+  try {
+    const response = await fetch(url, {
+      timeout: ARTICLE_FETCH_TIMEOUT_MS,
+      headers: {
+        'User-Agent': 'WorldPulse/1.0 (News Aggregator)'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const html = await response.text();
+
+    // Remove script and style tags
+    let text = html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+    // Try to find article content by looking for semantic tags
+    const articleMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
+    if (articleMatch) {
+      text = articleMatch[1];
+    } else {
+      // Try to find main content div
+      const mainMatch = html.match(/<div\b[^>]*\b(class|id)=["']([^"']*?(main|content|article|post|entry)[^"']*?)["'][^>]*>([\s\S]*?)<\/div>/i);
+      if (mainMatch) {
+        text = mainMatch[4];
+      } else {
+        // Fallback to body content
+        const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        if (bodyMatch) {
+          text = bodyMatch[1];
+        }
+      }
+    }
+
+    // Strip all HTML tags and clean up whitespace
+    text = text
+      .replace(/<[^>]*>?/gm, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Limit length to prevent extremely long descriptions
+    if (text.length > MAX_ARTICLE_CONTENT_LENGTH) {
+      text = text.substring(0, MAX_ARTICLE_CONTENT_LENGTH) + '...';
+    }
+
+    return text.length > 0 ? text : null;
+  } catch (err) {
+    console.debug(`Failed to extract article content from ${url}: ${err.message}`);
+    return null;
+  }
+}
 
 /**
  * Fetch and parse a single RSS feed. Tries fallback URL on failure.

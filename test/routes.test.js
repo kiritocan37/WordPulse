@@ -63,7 +63,16 @@ describe('Routes', function() {
           };
         }
       },
-      './translate': { translateArticle: mockTranslateArticle }
+      './translate': { translateArticle: mockTranslateArticle },
+      './config': {
+        CACHE_TTL: { ARTICLE_FEED: 10 * 60 * 1000 },
+        DEFAULTS: { ARTICLE_CACHE_KEY: 'all_articles' },
+        LIMITS: {
+          TRANSLATION_CONCURRENCY: 5,
+          ARTICLES_PER_SOURCE: 5,
+          MAX_PAGINATED_ARTICLES: 30
+        }
+      }
     });
 
     router = routesStub;
@@ -91,10 +100,17 @@ describe('Routes', function() {
             reject(err);
           } else {
             // Wait for async operations to complete
-            setTimeout(() => resolve(), 100);
+            setTimeout(() => {
+              console.log('In setTimeout, about to resolve');
+              resolve();
+            }, 500);
           }
         });
       }).then(() => {
+        console.log('In then, res.json.callCount:', res.json.callCount);
+        if (res.json.called) {
+          console.log('res.json.firstCall.args:', res.json.firstCall.args);
+        }
         // Should have called json with articles
         assert.ok(res.json.calledOnce);
 
@@ -121,7 +137,8 @@ describe('Routes', function() {
           if (err) {
             reject(err);
           } else {
-            resolve();
+            // Wait for async operations to complete
+            setTimeout(() => resolve(), 100);
           }
         });
       }).then(() => {
@@ -149,7 +166,8 @@ describe('Routes', function() {
           if (err) {
             reject(err);
           } else {
-            resolve();
+            // Wait for async operations to complete
+            setTimeout(() => resolve(), 100);
           }
         });
       }).then(() => {
@@ -181,7 +199,8 @@ describe('Routes', function() {
           if (err) {
             reject(err);
           } else {
-            resolve();
+            // Wait for async operations to complete
+            setTimeout(() => resolve(), 100);
           }
         });
       }).then(() => {
@@ -209,7 +228,8 @@ describe('Routes', function() {
           if (err) {
             reject(err);
           } else {
-            resolve();
+            // Wait for async operations to complete
+            setTimeout(() => resolve(), 100);
           }
         });
       }).then(() => {

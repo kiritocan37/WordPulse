@@ -2,13 +2,14 @@
 
 const RSSParser = require('rss-parser');
 const crypto = require('crypto');
+const { CACHE_TTL, TIMEOUTS } = require('./config');
 
 let lastSuccessfulArticles = [];
 let lastSuccessfulArticlesTimestamp = 0;
-const LAST_SUCCESSFUL_TTL = 60 * 60 * 1000; // 1 hour TTL for fallback cache
+const LAST_SUCCESSFUL_TTL = CACHE_TTL.LAST_SUCCESSFUL; // 1 hour TTL for fallback cache
 
 const parser = new RSSParser({
-  timeout: parseInt(process.env.RSS_TIMEOUT_MS) || 4000,
+  timeout: parseInt(process.env.RSS_TIMEOUT_MS) || TIMEOUTS.RSS_PARSER,
   headers: {
     'User-Agent': 'WorldPulse/1.0 (News Aggregator)'
   }
@@ -228,7 +229,7 @@ const fetchWithTimeout = (url, timeoutMs) => {
  */
 async function fetchFeed(source) {
   let feed;
-  const TIMEOUT = parseInt(process.env.RSS_TIMEOUT_MS) || 4500; // Configurable timeout
+  const TIMEOUT = parseInt(process.env.RSS_TIMEOUT_MS) || TIMEOUTS.RSS_FETCH; // Configurable timeout
 
   try {
     feed = await fetchWithTimeout(source.feedUrl, TIMEOUT);

@@ -1,5 +1,6 @@
 const translate = require('google-translate-api-x');
 const crypto = require('crypto');
+const { TIMEOUTS, CACHE_TTL } = require('./config');
 
 /**
  * Translate text using google-translate-api-x with fallback.
@@ -18,11 +19,10 @@ async function translateText(text, targetLang, signal) {
   const apiLang = normalizedTargetLang === 'ua' ? 'uk' : normalizedTargetLang;
 
   try {
-    const TRANSLATE_TIMEOUT = 4000; // 4s timeout for primary translation
     const res = await Promise.race([
       translate(text, { to: apiLang }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Google translate timed out after ${TRANSLATE_TIMEOUT}ms`)), TRANSLATE_TIMEOUT)
+        setTimeout(() => reject(new Error(`Google translate timed out after ${TIMEOUTS.TRANSLATION_PRIMARY}ms`)), TIMEOUTS.TRANSLATION_PRIMARY)
       )
     ]);
     return res.text;
@@ -38,8 +38,8 @@ async function translateText(text, targetLang, signal) {
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => {
           controller.abort();
-          reject(new Error(`LibreTranslate timeout after 5000ms`));
-        }, 5000)
+          reject(new Error(`LibreTranslate timeout after ${TIMEOUTS.TRANSLATION_FALLBACK}ms`));
+        }, TIMEOUTS.TRANSLATION_FALLBACK)
       );
 
       const fetchPromise = fetch(libreTranslateUrl, {
@@ -75,7 +75,7 @@ async function translateText(text, targetLang, signal) {
 }
 
 const { Cache } = require('./cache');
-const translationCache = new Cache(60 * 60 * 1000); // 1-hour TTL
+const translationCache = new Cache(CACHE_TTL.TRANSLATION); // 1-hour TTL from config
 
 /**
  * Generate a stable cache key for an article

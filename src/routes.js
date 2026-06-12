@@ -5,10 +5,11 @@ const router = express.Router();
 const { fetchAllFeeds, FEED_SOURCES } = require('./feeds');
 const { Cache } = require('./cache');
 const { translateArticle } = require('./translate');
+const { CACHE_TTL, DEFAULTS, LIMITS } = require('./config');
 
 // In-memory cache for RSS feeds (10 minutes TTL)
-const articleCache = new Cache(10 * 60 * 1000);
-const CACHE_KEY = 'all_articles';
+const articleCache = new Cache(CACHE_TTL.ARTICLE_FEED);
+const CACHE_KEY = DEFAULTS.ARTICLE_CACHE_KEY;
 
 /**
  * Fetch articles, either from cache or directly from RSS.
@@ -40,7 +41,7 @@ router.get('/articles', async (req, res) => {
       articles = articles.filter(a => a.category.toLowerCase() === category.toLowerCase());
     }
 
-    // Improved Source Diversity: for each source, take top 5 most recent articles
+    // Improved Source Diversity: for each source, take top LIMITS.ARTICLES_PER_SOURCE most recent articles
     const articlesBySource = {};
     for (const a of articles) {
       if (!articlesBySource[a.sourceId]) {
@@ -49,19 +50,19 @@ router.get('/articles', async (req, res) => {
       articlesBySource[a.sourceId].push(a);
     }
 
-    // Sort each source's articles by date (newest first) and take top 5
+    // Sort each source's articles by date (newest first) and take top LIMITS.ARTICLES_PER_SOURCE
     const diverseArticles = Object.values(articlesBySource)
       .map(sourceArticles =>
         sourceArticles
           .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
-          .slice(0, 5)
+          .slice(0, LIMITS.ARTICLES_PER_SOURCE)
       )
       .flat()
       .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate)); // Global sort by date
 
-    const paginated = diverseArticles.slice(0, 30);
+    const paginated = diverseArticles.slice(0, LIMITS.MAX_PAGINATED_ARTICLES);
     const translatedArticles = [];
-    const CONCURRENCY_LIMIT = 5;
+    const CONCURRENCY_LIMIT = LIMITS.TRANSLATION_CONCURRENCY;
 
     for (let i = 0; i < paginated.length; i += CONCURRENCY_LIMIT) {
       if (abortController.signal.aborted) {

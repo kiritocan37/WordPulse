@@ -2,7 +2,7 @@
 
 // Use Redis cache when environment variables are provided, otherwise fall back to in-memory
 const { RedisCache } = require('./cache-redis');
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const { CACHE_TTL } = require('./config');
 
 const cacheOptions = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -32,7 +32,7 @@ let cacheMisses = 0;
 let cache;
 if (useRedis) {
   try {
-    cache = new RedisCache(cacheOptions, CACHE_TTL);
+    cache = new RedisCache(cacheOptions, CACHE_TTL.ARTICLE_FEED);
     console.log('Using Redis cache (Upstash compatible)');
   } catch (err) {
     console.warn('Failed to initialize Redis cache, falling back to in-memory:', err.message);

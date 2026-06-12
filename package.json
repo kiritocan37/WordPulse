@@ -8,6 +8,8 @@
     "test": "mocha test/**/*.test.js"
   },
   "dependencies": {
+    "@sentry/browser": "^10.57.0",
+    "@sentry/node": "^10.57.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",

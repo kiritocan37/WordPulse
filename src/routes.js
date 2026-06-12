@@ -51,6 +51,11 @@ router.get('/articles', async (req, res) => {
     if (err.name !== 'AbortError') {
       console.error('Error fetching articles:', err);
       res.status(500).json({ error: 'Failed to fetch articles' });
+    } else {
+      // Client disconnected, send 499 if headers not sent
+      if (!res.headersSent) {
+        res.status(499).json({ error: 'Client closed request' });
+      }
     }
   }
 });

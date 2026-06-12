@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: 'https://word-pulse-nine.vercel.app'
+  origin: process.env.CORS_ORIGIN || 'https://word-pulse-nine.vercel.app'
 }));
 
 // Compression
@@ -42,7 +42,11 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

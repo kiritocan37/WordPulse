@@ -50,31 +50,51 @@ async function getProcessedArticles({ countryFilter, categoryFilter, langFilter 
     .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate)); // Global sort by date
 
   const paginated = diverseArticles.slice(0, LIMITS.MAX_PAGINATED_ARTICLES);
-  const translatedArticles = [];
+  let translatedArticles = [];
   const CONCURRENCY_LIMIT = LIMITS.TRANSLATION_CONCURRENCY;
 
-  for (let i = 0; i < paginated.length; i += CONCURRENCY_LIMIT) {
-    // Skip processing if request was aborted
-    if (abortSignal && abortSignal.aborted) {
-      break; // Stop processing completely when aborted
-    }
+  // Worker pool for translation
+  const queue = [...paginated];
+  const results = new Array(queue.length);
+  let index = 0;
 
-    const chunk = paginated.slice(i, i + CONCURRENCY_LIMIT);
-    const promises = chunk.map(a => translateArticle(a, langFilter, abortSignal));
-    const results = await Promise.allSettled(promises);
-
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        translatedArticles.push(result.value);
-      } else {
-        // Don't treat AbortError as an error - it's expected when client disconnects
-        if (result.reason && result.reason.name !== 'AbortError') {
-          console.error('Translation error:', result.reason.message || result.reason);
-        }
-        translatedArticles.push(chunk[index]); // Graceful fallback
+  const worker = async () => {
+    while (true) {
+      // Check for abort signal
+      if (abortSignal && abortSignal.aborted) {
+        break;
       }
-    });
+
+      // Get the next index to process
+      const i = index++;
+      if (i >= queue.length) {
+        break; // No more articles to process
+      }
+
+      try {
+        const translated = await translateArticle(queue[i], langFilter, abortSignal);
+        results[i] = translated;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Translation error:', err.message || err);
+        }
+        // Graceful fallback: use original article
+        results[i] = queue[i];
+      }
+    }
+  };
+
+  // Create workers
+  const workers = [];
+  for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
+    workers.push(worker());
   }
+
+  // Wait for all workers to finish
+  await Promise.all(workers);
+
+  // Add all results to translatedArticles (in order)
+  translatedArticles = results.slice(0, index);
 
   return translatedArticles;
 }

@@ -22,32 +22,28 @@ async function getProcessedArticles({ countryFilter, categoryFilter, langFilter 
   // Fetch articles (from cache or network)
   let articles = await articleCache.getOrFetch(CACHE_KEY, () => fetchAllFeeds());
 
-  // Apply filters
-  if (countryFilter) {
-    articles = articles.filter(a => a.country === countryFilter);
-  }
-  if (categoryFilter) {
-    articles = articles.filter(a => a.category === categoryFilter);
+  // Apply filters in a single pass (AND logic)
+  if (countryFilter || categoryFilter) {
+    articles = articles.filter(a =>
+      (!countryFilter || a.country === countryFilter) &&
+      (!categoryFilter || a.category === categoryFilter)
+    );
   }
 
-  // Improved Source Diversity: for each source, take top LIMITS.ARTICLES_PER_SOURCE most recent articles
-  const articlesBySource = {};
-  for (const a of articles) {
-    if (!articlesBySource[a.sourceId]) {
-      articlesBySource[a.sourceId] = [];
+  // Sort all articles by date (newest first)
+  articles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+// Improved Source Diversity: take up to LIMITS.ARTICLES_PER_SOURCE per source, in date order
+  const diverseArticles = [];
+  const sourceCount = {};
+  for (const article of articles) {
+    const sourceId = article.sourceId;
+    const count = sourceCount[sourceId] || 0;
+    if (count < LIMITS.ARTICLES_PER_SOURCE) {
+      diverseArticles.push(article);
+      sourceCount[sourceId] = count + 1;
     }
-    articlesBySource[a.sourceId].push(a);
   }
-
-  // Sort each source's articles by date (newest first) and take top LIMITS.ARTICLES_PER_SOURCE
-  const diverseArticles = Object.values(articlesBySource)
-    .map(sourceArticles =>
-      sourceArticles
-        .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
-        .slice(0, LIMITS.ARTICLES_PER_SOURCE)
-    )
-    .flat()
-    .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate)); // Global sort by date
 
   const paginated = diverseArticles.slice(0, LIMITS.MAX_PAGINATED_ARTICLES);
   let translatedArticles = [];

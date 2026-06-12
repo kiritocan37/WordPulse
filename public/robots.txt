@@ -1,3 +1,20 @@
 User-agent: *
-Allow: /
+Allow: /public/
+Disallow: /api/
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /.git/
+Disallow: /*.zip$
+Disallow: /*.map$
+
+# Allow crawling of important directories
+Allow: /css/
+Allow: /js/
+Allow: /images/
+Allow: /fonts/
+
+# Sitemap location
 Sitemap: https://word-pulse-nine.vercel.app/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1

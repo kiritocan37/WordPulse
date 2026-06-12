@@ -31,6 +31,100 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Update HTML language attribute based on selected language
+  function updateHtmlLang() {
+    const htmlElement = document.getElementById('html-lang');
+    if (htmlElement) {
+      htmlElement.lang = currentLang === 'ua' ? 'uk' : currentLang;
+    }
+  }
+
+  // Update meta tags for SEO and social sharing
+  function updateMetaTags(article = null) {
+    const titleElement = document.getElementById('page-title');
+    const ogTitleElement = document.getElementById('meta-og-title');
+    const ogDescriptionElement = document.getElementById('meta-og-description');
+    const ogUrlElement = document.getElementById('meta-og-url');
+    const ogLocaleElement = document.getElementById('meta-og-locale');
+    const twitterCardElement = document.getElementById('meta-twitter-card');
+    const descriptionElement = document.getElementById('meta-description');
+    const canonicalElement = document.getElementById('link-canonical');
+    const jsonLdElement = document.getElementById('json-ld');
+
+    // Default values
+    let pageTitle = 'WorldPulse | Global News Aggregator';
+    let ogTitle = 'WordPulse - Global News';
+    let ogDescription = 'International news from BBC Al Jazeera Reuters and more';
+    let ogUrl = 'https://word-pulse-nine.vercel.app/';
+    let ogLocale = 'en_US';
+    let twitterCard = 'summary';
+    let description = 'International news from BBC Al Jazeera Reuters and more';
+    let canonicalUrl = 'https://word-pulse-nine.vercel.app/';
+
+    // If we have a specific article (for hero article), override with article data
+    if (article) {
+      pageTitle = `${article.title} - WorldPulse`;
+      ogTitle = article.title;
+      ogDescription = article.description || 'International news from BBC Al Jazeera Reuters and more';
+      ogUrl = `https://word-pulse-nine.vercel.app/article/${encodeURIComponent(article.title)}`;
+      ogLocale = currentLang === 'ua' ? 'uk_UA' : `${currentLang.toUpperCase()}_${currentLang.toUpperCase() === 'UA' ? 'UA' : currentLang.toUpperCase()}`;
+      description = article.description || 'International news from BBC Al Jazeera Reuters and more';
+      canonicalUrl = ogUrl;
+
+      // Update JSON-LD structured data for NewsArticle
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": article.title,
+        "description": article.description || "",
+        "image": article.urlToImage || "",
+        "datePublished": article.pubDate,
+        "dateModified": article.pubDate,
+        "author": {
+          "@type": "Organization",
+          "name": article.source
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": article.source,
+          "logo": {
+            "@type": "ImageObject",
+            "url": article.urlToImage || ""
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": ogUrl
+        }
+      };
+      jsonLdElement.textContent = JSON.stringify(jsonLd);
+    } else {
+      // Clear JSON-LD for homepage
+      jsonLdElement.textContent = '';
+    }
+
+    // Update all meta tags
+    if (titleElement) titleElement.textContent = pageTitle;
+    if (ogTitleElement) ogTitleElement.content = ogTitle;
+    if (ogDescriptionElement) ogDescriptionElement.content = ogDescription;
+    if (ogUrlElement) ogUrlElement.content = ogUrl;
+    if (ogLocaleElement) ogLocaleElement.content = ogLocale;
+    if (twitterCardElement) twitterCardElement.content = twitterCard;
+    if (descriptionElement) descriptionElement.content = description;
+    if (canonicalElement) canonicalElement.href = canonicalUrl;
+  }
+
+  // Update hreflang links
+  function updateHreflangLinks() {
+    const langs = ['en', 'ru', 'ua'];
+    langs.forEach(lang => {
+      const linkElement = document.getElementById(`link-hreflang-${lang}`);
+      if (linkElement) {
+        linkElement.href = `https://word-pulse-nine.vercel.app/`;
+      }
+    });
+  }
+
   // Initialize
   fetchArticles();
 
@@ -183,6 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
     heroSection.append(heroMeta, heroTitle, heroDesc);
     heroSection.classList.remove('hidden');
 
+    // Update SEO meta tags for the hero article
+    updateHtmlLang();
+    updateMetaTags(heroArticle);
+    updateHreflangLinks();
+
     // Show divider between hero and grid
     if (sectionDivider) {
       sectionDivider.classList.remove('hidden');
@@ -259,6 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMoreContainer.classList.add('hidden');
       }
     }
+
+    // Reset meta tags to homepage defaults when showing grid (not hero)
+    updateHtmlLang();
+    updateMetaTags(); // Pass null for homepage defaults
+    updateHreflangLinks();
   }
 
   function isSafeUrl(url) {

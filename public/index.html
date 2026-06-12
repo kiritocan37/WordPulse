@@ -53,7 +53,14 @@
 
   <main>
     <div id="loader" class="loader loader-pulse">Loading latest global pulse…</div>
-    <div id="error-message" class="error-message hidden"></div>
+    <div id="error-message" class="error-message hidden">
+      <p></p>
+      <button id="retry-button" class="filter-btn">Retry</button>
+    </div>
+
+    <div id="search-container">
+      <input type="text" id="search-input" placeholder="Search articles by title..." class="search-input">
+    </div>
 
     <section id="hero-section" class="hero hidden">
       <!-- Hero article injected via JS -->
@@ -64,6 +71,10 @@
     <section id="bento-grid" class="bento-grid hidden">
       <!-- Articles injected via JS -->
     </section>
+
+    <div id="load-more-container">
+      <button id="load-more-button" class="filter-btn">Load More</button>
+    </div>
   </main>
 
   <footer>

@@ -8,20 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const editionDate = document.getElementById('edition-date');
   const catFilters = document.querySelectorAll('#category-filters .filter-btn');
   const countryFilters = document.querySelectorAll('#country-filters .filter-btn');
+  const searchInput = document.getElementById('search-input');
+  const retryButton = document.getElementById('retry-button');
+  const loadMoreButton = document.getElementById('load-more-button');
+  const loadMoreContainer = document.getElementById('load-more-container');
 
   let currentLang = document.getElementById('lang-select') ? document.getElementById('lang-select').value : 'en';
   let currentCategory = '';
   let currentCountry = '';
   let currentAbortController = null;
-
-  function isSafeUrl(url) {
-    try {
-      const parsedUrl = new URL(url, window.location.origin);
-      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
-    } catch (e) {
-      return false;
-    }
-  }
+  let allArticles = []; // Store all fetched articles
+  let filteredArticles = []; // Articles after applying search
+  let currentOffset = 0; // For pagination of grid (skip hero)
+  const PAGE_SIZE = 30;
+  let searchTimeoutId = null;
 
   // Edition date
   const now = new Date();
@@ -58,14 +58,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeoutId);
+    searchTimeoutId = setTimeout(() => {
+      applySearch(e.target.value);
+    }, 300);
+  });
+
+  if (retryButton) {
+    retryButton.addEventListener('click', () => {
+      fetchArticles();
+    });
+  }
+
+  if (loadMoreButton) {
+    loadMoreButton.addEventListener('click', () => {
+      currentOffset++;
+      displayArticles();
+    });
+  }
+
   async function fetchArticles() {
     showLoader();
-    
+
     if (currentAbortController) {
       currentAbortController.abort();
     }
     currentAbortController = new AbortController();
-    
+
     try {
       const url = new URL('/api/articles', window.location.origin);
       url.searchParams.append('lang', currentLang);
@@ -81,9 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(url, { signal: currentAbortController.signal });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Failed to fetch articles');
-      
+
       const articles = await response.json();
-      renderArticles(articles);
+      allArticles = articles;
+      // Reset search and pagination when new articles are fetched
+      filteredArticles = articles;
+      currentOffset = 0;
+      displayArticles();
     } catch (err) {
       if (err.name === 'AbortError') {
         // Distinguish between user-initiated abort (new fetch) and timeout abort
@@ -97,30 +121,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderArticles(articles) {
+  function applySearch(searchTerm) {
+    if (searchTerm.trim() === '') {
+      filteredArticles = allArticles;
+    } else {
+      const term = searchTerm.toLowerCase();
+      filteredArticles = allArticles.filter(article =>
+        article.title.toLowerCase().includes(term)
+      );
+    }
+    currentOffset = 0;
+    displayArticles();
+  }
+
+  function displayArticles() {
     hideLoader();
-    
-    heroSection.innerHTML = '';
-    bentoGrid.innerHTML = '';
-    
-    if (!articles || articles.length === 0) {
+
+    // Hide error message initially
+    errorMessage.classList.add('hidden');
+    errorMessage.textContent = '';
+
+    if (!filteredArticles || filteredArticles.length === 0) {
       showError('No articles found matching the selected criteria.');
       return;
     }
 
-    // Render Hero
-    const heroArticle = articles[0];
-    
+    // Render Hero (always the first article)
+    const heroArticle = filteredArticles[0];
+
+    heroSection.innerHTML = '';
+
     const heroMeta = document.createElement('div');
     heroMeta.className = 'hero-meta';
-    
+
     const heroSource = document.createElement('span');
     heroSource.textContent = heroArticle.source;
     const heroDate = document.createElement('span');
     heroDate.textContent = new Date(heroArticle.pubDate).toLocaleDateString();
     const heroCategory = document.createElement('span');
     heroCategory.textContent = heroArticle.category;
-    
+
     heroMeta.append(heroSource, heroDate, heroCategory);
 
     const heroTitle = document.createElement('h1');
@@ -148,9 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
       sectionDivider.classList.remove('hidden');
     }
 
-    // Render Grid
-    const gridArticles = articles.slice(1);
-    
+    // Render Grid (paginated)
+    bentoGrid.innerHTML = '';
+
+    // Calculate grid indices: skip hero (index 0), then paginate
+    const gridStart = 1 + currentOffset * PAGE_SIZE;
+    const gridEnd = gridStart + PAGE_SIZE;
+    const gridArticles = filteredArticles.slice(gridStart, gridEnd);
+
+    if (gridArticles.length === 0 && currentOffset > 0) {
+      // If we've gone beyond available articles, reset to last page
+      currentOffset = Math.max(0, Math.floor((filteredArticles.length - 1) / PAGE_SIZE));
+      return displayArticles(); // Recursive call with corrected offset
+    }
+
     const observer = new IntersectionObserver((entries, obs) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -197,6 +248,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     bentoGrid.classList.remove('hidden');
+
+    // Show/hide Load More button
+    const totalGridArticles = filteredArticles.length - 1; // Excluding hero
+    const shownGridArticles = gridEnd - 1; // Because gridStart starts at 1, so shown = gridEnd - 1
+    if (loadMoreContainer) {
+      if (shownGridArticles < totalGridArticles) {
+        loadMoreContainer.classList.remove('hidden');
+      } else {
+        loadMoreContainer.classList.add('hidden');
+      }
+    }
+  }
+
+  function isSafeUrl(url) {
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch (e) {
+      return false;
+    }
   }
 
   function showLoader() {
@@ -206,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bentoGrid.classList.add('hidden');
     if (sectionDivider) sectionDivider.classList.add('hidden');
     errorMessage.classList.add('hidden');
+    if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
   }
 
   function hideLoader() {
@@ -218,7 +290,15 @@ document.addEventListener('DOMContentLoaded', () => {
     heroSection.classList.add('hidden');
     bentoGrid.classList.add('hidden');
     if (sectionDivider) sectionDivider.classList.add('hidden');
-    errorMessage.textContent = msg;
+    if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+    errorMessage.innerHTML = `<p>${msg}</p><button id="retry-button" class="filter-btn">Retry</button>`;
     errorMessage.classList.remove('hidden');
+    // Re-attach retry button event listener
+    const retryBtn = document.getElementById('retry-button');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        fetchArticles();
+      });
+    }
   }
 });

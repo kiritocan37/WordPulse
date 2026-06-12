@@ -134,5 +134,6 @@ async function translateArticle(article, targetLang, signal) {
 
 module.exports = {
   translateText,
-  translateArticle
+  translateArticle,
+  generateTranslationCacheKey
 };

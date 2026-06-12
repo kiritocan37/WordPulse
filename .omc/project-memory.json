@@ -1,0 +1,196 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1781216723633,
+  "projectRoot": "C:\\Users\\inthe\\Desktop\\WordPulse",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=18.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "express",
+        "version": "5.2.1",
+        "category": "backend"
+      },
+      {
+        "name": "mocha",
+        "version": "11.7.6",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 18.0.0"
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": "npm run start",
+    "scripts": {
+      "start": "node server.js",
+      "test": "mocha test/**/*.test.js"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase/PascalCase",
+    "importStyle": "CommonJS",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "src",
+      "test"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1781216723601,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 5,
+      "lastAccessed": 1781216723602,
+      "keyFiles": [
+        "cache-redis.js",
+        "cache.js",
+        "feeds.js",
+        "routes.js",
+        "translate.js"
+      ]
+    },
+    "test": {
+      "path": "test",
+      "purpose": "Test files",
+      "fileCount": 4,
+      "lastAccessed": 1781216723616,
+      "keyFiles": [
+        "cache.test.js",
+        "feeds.test.js",
+        "routes.test.js",
+        "translate.test.js"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "test\\routes.test.js",
+      "accessCount": 111,
+      "lastAccessed": 1781254999241,
+      "type": "file"
+    },
+    {
+      "path": "test\\translate.test.js",
+      "accessCount": 58,
+      "lastAccessed": 1781254747808,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 56,
+      "lastAccessed": 1781253314758,
+      "type": "file"
+    },
+    {
+      "path": "src\\cache.js",
+      "accessCount": 28,
+      "lastAccessed": 1781251315924,
+      "type": "file"
+    },
+    {
+      "path": "src\\translate.js",
+      "accessCount": 21,
+      "lastAccessed": 1781254724724,
+      "type": "file"
+    },
+    {
+      "path": "server.js",
+      "accessCount": 19,
+      "lastAccessed": 1781251280530,
+      "type": "file"
+    },
+    {
+      "path": "test\\feeds.test.js",
+      "accessCount": 17,
+      "lastAccessed": 1781214287639,
+      "type": "file"
+    },
+    {
+      "path": "test\\cache.test.js",
+      "accessCount": 15,
+      "lastAccessed": 1781253166745,
+      "type": "file"
+    },
+    {
+      "path": "src\\routes.js",
+      "accessCount": 14,
+      "lastAccessed": 1781254046252,
+      "type": "file"
+    },
+    {
+      "path": "src\\feeds.js",
+      "accessCount": 11,
+      "lastAccessed": 1781251529991,
+      "type": "file"
+    },
+    {
+      "path": "debug-test.js",
+      "accessCount": 3,
+      "lastAccessed": 1781216579786,
+      "type": "file"
+    },
+    {
+      "path": "src\\cache-redis.js",
+      "accessCount": 2,
+      "lastAccessed": 1781211943659,
+      "type": "file"
+    },
+    {
+      "path": "public\\js\\app.js",
+      "accessCount": 2,
+      "lastAccessed": 1781251645469,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1781209314709,
+      "type": "file"
+    },
+    {
+      "path": "vercel.json",
+      "accessCount": 1,
+      "lastAccessed": 1781209473396,
+      "type": "file"
+    },
+    {
+      "path": "public\\index.html",
+      "accessCount": 1,
+      "lastAccessed": 1781251405203,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

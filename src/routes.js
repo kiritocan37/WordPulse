@@ -97,12 +97,17 @@ router.get('/articles', async (req, res) => {
 
 // GET /api/sources
 router.get('/sources', (req, res) => {
-  res.json(FEED_SOURCES.map(s => ({
-    id: s.id,
-    name: s.name,
-    country: s.country,
-    language: s.language
-  })));
+  try {
+    res.json(FEED_SOURCES.map(s => ({
+      id: s.id,
+      name: s.name,
+      country: s.country,
+      language: s.language
+    })));
+  } catch (err) {
+    console.error('Error in /sources handler:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;

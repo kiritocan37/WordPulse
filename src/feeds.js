@@ -98,7 +98,7 @@ const CATEGORY_KEYWORDS = {
   culture: [
     'culture', 'art', 'music', 'film', 'cinema', 'book', 'theater',
     'entertainment', 'sport', 'football', 'olympic', 'festival',
-    'cinema', 'musique', 'litterature',
+    'musique', 'litterature',
     'kultur', 'kunst', 'musik', 'kino', 'sport',
     'культур', 'искусств', 'спорт', 'кино', 'музык'
   ],
@@ -289,5 +289,6 @@ module.exports = {
   fetchAllFeeds,
   categorizeArticle,
   extractImage,
+  mapItemToArticle,
   CATEGORY_KEYWORDS
 };

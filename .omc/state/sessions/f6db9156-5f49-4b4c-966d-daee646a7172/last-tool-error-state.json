@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"npm test\",\"description\":\"Run unit tests again to check progress\"}",
+  "error": "Exit code 5\n\n> worldpulse@1.0.0 test\n> mocha test/**/*.test.js\n\nUsing in-memory cache\n\n\n  Cache\n    get()\n      ✔ should return null for non-existent key\n      ✔ should return cached value for existing key\n      ✔ should return null for expired key\n    set()\n      ✔ should store value with timestamp\n    isStale()\n      ✔ should return true for non-existent key\n      ✔ should return false for fresh key\n      ✔ should return true for expired key\n    getAge()\n      ✔ should return null for non-exis...",
+  "timestamp": "2026-06-12T08:59:38.648Z",
+  "retry_count": 1
+}

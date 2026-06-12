@@ -25,20 +25,39 @@ router.get('/articles', async (req, res) => {
   req.on('close', () => abortController.abort());
 
   try {
-    const country = req.query.country || '';
-    const category = req.query.category || '';
-    const lang = req.query.lang || 'en';
+    // Whitelists for query parameters
+    const VALID_COUNTRIES = ['US', 'UK', 'QA', 'DE', 'FR', 'RU'];
+    const VALID_CATEGORIES = ['world', 'tech', 'politics', 'culture'];
+    const VALID_LANGS = ['en', 'fr', 'de', 'ru'];
+
+    const countryParam = req.query.country;
+    let countryFilter = '';
+    if (countryParam && VALID_COUNTRIES.includes(countryParam.toUpperCase())) {
+      countryFilter = countryParam.toUpperCase();
+    }
+
+    const categoryParam = req.query.category;
+    let categoryFilter = '';
+    if (categoryParam && VALID_CATEGORIES.includes(categoryParam.toLowerCase())) {
+      categoryFilter = categoryParam.toLowerCase();
+    }
+
+    const langParam = req.query.lang;
+    let langFilter = 'en';
+    if (langParam && VALID_LANGS.includes(langParam.toLowerCase())) {
+      langFilter = langParam.toLowerCase();
+    }
 
     let articles = await getArticles();
 
     // Filter by country
-    if (country) {
-      articles = articles.filter(a => a.country.toLowerCase() === country.toLowerCase());
+    if (countryFilter) {
+      articles = articles.filter(a => a.country === countryFilter);
     }
 
     // Filter by category
-    if (category) {
-      articles = articles.filter(a => a.category.toLowerCase() === category.toLowerCase());
+    if (categoryFilter) {
+      articles = articles.filter(a => a.category === categoryFilter);
     }
 
     // Improved Source Diversity: for each source, take top LIMITS.ARTICLES_PER_SOURCE most recent articles
@@ -65,12 +84,13 @@ router.get('/articles', async (req, res) => {
     const CONCURRENCY_LIMIT = LIMITS.TRANSLATION_CONCURRENCY;
 
     for (let i = 0; i < paginated.length; i += CONCURRENCY_LIMIT) {
+      // Skip processing if request was aborted
       if (abortController.signal.aborted) {
-        return;
+        break; // Stop processing completely when aborted
       }
 
       const chunk = paginated.slice(i, i + CONCURRENCY_LIMIT);
-      const promises = chunk.map(a => translateArticle(a, lang, abortController.signal));
+      const promises = chunk.map(a => translateArticle(a, langFilter, abortController.signal));
       const results = await Promise.allSettled(promises);
 
       results.forEach((result, index) => {

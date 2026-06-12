@@ -21,12 +21,16 @@ const indexHtmlTemplate = fs.readFileSync(
 );
 
 // Sentry initialization
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || '',
-  tracesSampleRate: 1.0,
-  // Enable request handler to automatically capture errors from Express
-  requestHandler: true,
-});
+const sentryDsn = process.env.SENTRY_DSN || '';
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    tracesSampleRate: 1.0,
+  });
+
+  // The request handler must be the first middleware on the app
+  app.use(Sentry.Handlers.requestHandler());
+}
 
 // Security middleware
 app.use(helmet());
@@ -131,8 +135,10 @@ app.get('/sitemap.xml', (req, res) => {
   res.send(xml);
 });
 
-// Sentry error handler
-app.use(Sentry.Handlers.errorHandler());
+// Sentry error handler and tracing (only if DSN is provided)
+if (sentryDsn) {
+  app.use(Sentry.Handlers.errorHandler());
+}
 
 // Fallback for SPA/Frontend
 app.get(/(.*)/, (req, res) => {

@@ -12,7 +12,6 @@ const pino = require('pino-http');
 const apiRoutes = require('./src/routes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Read index.html template at startup
 const indexHtmlTemplate = fs.readFileSync(
@@ -50,15 +49,11 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Simple logging middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log(`${req.method} ${req.path} ${res.statusCode} - ${duration}ms`);
-  });
-  next();
-});
+// Body parsing middleware
+app.use(express.json());
+
+// API Routes - MUST come before static files
+app.use('/api', apiRoutes);
 
 // Enhanced health check endpoint with system metrics
 app.get('/health', async (req, res) => {
@@ -83,7 +78,6 @@ app.get('/health', async (req, res) => {
       healthData.cacheStatus = 'ok';
     } catch (cacheErr) {
       healthData.cacheStatus = 'error';
-      healthData.cacheError = cacheErr.message;
       // Don't fail the health check for cache issues
     }
 
@@ -98,11 +92,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
-
-// API Routes
-app.use('/api', apiRoutes);
 
 // Sitemap
 app.get('/sitemap.xml', (req, res) => {
@@ -127,7 +118,7 @@ app.get('/sitemap.xml', (req, res) => {
       '    <lastmod>' + url.lastmod + '</lastmod>\n' +
       '    <changefreq>' + url.changefreq + '</changefreq>\n' +
       '    <priority>' + url.priority + '</priority>\n' +
-      '  </url>').join('\n') +
+    '  </url>').join('\n') +
     '\n</urlset>';
 
   res.setHeader('Last-Modified', httpLastMod);
@@ -141,7 +132,7 @@ if (sentryDsn) {
 }
 
 // Fallback for SPA/Frontend
-app.get(/(.*)/, (req, res) => {
+app.get('/*', (req, res) => {
   const sentryDsn = process.env.SENTRY_DSN || '';
   const modifiedHtml = indexHtmlTemplate.replace(
     /<meta name="sentry-dsn" content="[^"]*">/,
@@ -150,17 +141,21 @@ app.get(/(.*)/, (req, res) => {
   res.send(modifiedHtml);
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`WorldPulse server is running on port ${PORT}`);
-});
-server.setTimeout(60000); // Increased timeout to 60 seconds
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
+// Only start listening if this file is run directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  const server = app.listen(PORT, () => {
+    console.log(`WorldPulse server is running on port ${PORT}`);
   });
-});
+  server.setTimeout(60000); // Increased timeout to 60 seconds
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('Process terminated');
+    });
+  });
+}
 
 module.exports = app;

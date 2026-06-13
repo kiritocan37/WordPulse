@@ -146,6 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return cs.getPropertyValue(variableName).trim();
   }
 
+  // Manual HTML sanitization function to prevent XSS
+  function sanitizeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   // Initialize keyboard navigation for better accessibility
   function initKeyboardNavigation() {
     // Make sure search input is accessible
@@ -360,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span>${heroArticle.category}</span>
       </div>
       ${heroArticle.imageUrl ? `<img src="${heroArticle.imageUrl}" alt="${heroArticle.title}" class="hero-image">` : ''}
-      <p class="hero-description">${heroArticle.description || ''}</p>
+      <p class="hero-description">${sanitizeHtml(heroArticle.description || '')}</p>
       <div class="hero-actions">
         <button class="read-original-btn" data-link="${heroArticle.link}" ${!heroArticle.link || !isSafeUrl(heroArticle.link) ? 'disabled' : ''}>
           Read Original
@@ -426,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cardContent.className = 'card-content';
       cardContent.innerHTML = `
         ${article.imageUrl ? `<img src="${article.imageUrl}" alt="${article.title}" class="card-image">` : ''}
-        <p class="card-description">${article.description || ''}</p>
+        <p class="card-description">${sanitizeHtml(article.description || '')}</p>
         <div class="card-actions">
           <button class="read-original-btn" data-link="${article.link}" ${!article.link || !isSafeUrl(article.link) ? 'disabled' : ''}>
             Read Original
